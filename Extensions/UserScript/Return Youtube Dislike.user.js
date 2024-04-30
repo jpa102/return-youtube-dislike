@@ -32,7 +32,7 @@ const extConfig = {
   coloredBar: false, // [true, false*] Colorize ratio bar (Use custom colors for ratio bar)
   colorTheme: "classic", // [classic*, accessible, neon] Color theme (red/green, blue/yellow, pink/cyan)
   numberDisplayFormat: "compactShort", // [compactShort*, compactLong, standard] Number format (For non-English locale users, you may be able to improve appearance with a different option. Please file a feature request if your locale is not covered)
-  numberDisplayRoundDown: true, // [true*, false] Round down numbers (Show rounded down numbers)
+  numberDisplayRoundDown: false, // [true, false*] Round down numbers (Show rounded down numbers)
   tooltipPercentageMode: "none", // [none*, dash_like, dash_dislike, both, only_like, only_dislike] Mode of showing percentage in like/dislike bar tooltip.
   numberDisplayReformatLikes: false, // [true, false*] Re-format like numbers (Make likes and dislikes format consistent)
   rateBarEnabled: false, // [true, false*] Enables ratio bar under like/dislike buttons
@@ -140,7 +140,9 @@ function getDislikeTextContainer() {
   if (result === null) {
     let textSpan = document.createElement("span");
     textSpan.id = "text";
-    textSpan.style.marginLeft = "6px";
+    //textSpan.style.marginLeft = "6px"; // impractical imo
+    document.querySelector("dislike-button-view-model > toggle-button-view-model > button-view-model > button").classList.remove("yt-spec-button-shape-next--icon-button"); // new way
+    document.querySelector("dislike-button-view-model > toggle-button-view-model > button-view-model > button").classList.add("yt-spec-button-shape-next--icon-leading"); // new way
     dislikeButton?.querySelector("button").appendChild(textSpan);
     if (dislikeButton) dislikeButton.querySelector("button").style.width = "auto";
     result = textSpan;
@@ -386,7 +388,7 @@ function createRateBar(likes, dislikes) {
     );
     let descriptionAndActionsElement = document.getElementById("top-row");
     descriptionAndActionsElement.style.borderBottom = "1px solid var(--yt-spec-10-percent-layer)";
-    descriptionAndActionsElement.style.paddingBottom = "10px";
+    descriptionAndActionsElement.style.paddingBottom = "6px"; // adjust the bottom padding value (orig: 10px)
   } else {
     document.querySelector(".ryd-tooltip").style.width = widthPx + "px";
     document.getElementById("return-youtube-dislike-bar").style.width = widthPercent + "%";
