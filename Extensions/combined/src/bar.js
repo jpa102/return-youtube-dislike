@@ -94,7 +94,7 @@ function createRateBar(likes, dislikes) {
           let descriptionAndActionsElement = document.getElementById("top-row");
           descriptionAndActionsElement.style.borderBottom =
             "1px solid var(--yt-spec-10-percent-layer)";
-          descriptionAndActionsElement.style.paddingBottom = "10px";
+          descriptionAndActionsElement.style.paddingBottom = "6px"; // adjust the bottom padding to 6px (orig is 10px)
 
           // Fix like/dislike ratio bar offset in new UI
           document.getElementById("actions-inner").style.width = "revert";
