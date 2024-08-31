@@ -36,7 +36,7 @@ const extConfig = {
   numberDisplayRoundDown: false, // [true, false*] Round down numbers (Show rounded down numbers)
   tooltipPercentageMode: "none", // [none*, dash_like, dash_dislike, both, only_like, only_dislike] Mode of showing percentage in like/dislike bar tooltip.
   numberDisplayReformatLikes: false, // [true, false*] Re-format like numbers (Make likes and dislikes format consistent)
-  rateBarEnabled: false, // [true, false*] Enables ratio bar under like/dislike buttons
+  rateBarEnabled: true, // [true, false*] Enables ratio bar under like/dislike buttons
   // END USER OPTIONS
 };
 
