@@ -2,7 +2,7 @@
 // @name         Return YouTube Dislike
 // @namespace    https://www.returnyoutubedislike.com/
 // @homepage     https://www.returnyoutubedislike.com/
-// @version      3.1.6
+// @version      3.1.7
 // @encoding     utf-8
 // @description  Return of the YouTube Dislike, Based off https://www.returnyoutubedislike.com/
 // @icon         https://github.com/Anarios/return-youtube-dislike/raw/main/Icons/Return%20Youtube%20Dislike%20-%20Transparent.png
@@ -39,6 +39,17 @@ const extConfig = {
   rateBarEnabled: false, // [true, false*] Enables ratio bar under like/dislike buttons
   // END USER OPTIONS
 };
+
+// code source: https://www.reddit.com/r/GoogleAppsScript/comments/185tw8f/comment/kb4t2o4/
+// youtube seems to be restrictive now, urban dictionary doesn't behave like this
+// this code block is here for the ratio bar to render below the like & dislike buttons
+if (window.trustedTypes && window.trustedTypes.createPolicy) {
+	window.trustedTypes.createPolicy('default', {
+		createHTML: string => string,
+		createScriptURL: string => string,
+		createScript: string => string,
+	});
+}
 
 const LIKED_STATE = "LIKED_STATE";
 const DISLIKED_STATE = "DISLIKED_STATE";
