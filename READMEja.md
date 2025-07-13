@@ -7,7 +7,7 @@
 [![Discord](https://img.shields.io/discord/909435648170160229?label=Discord&style=flat&logo=discord)](https://discord.gg/UMxyMmCgfF)
 [![License](https://img.shields.io/badge/License-GPLv3-blue.svg?style=flat)](https://github.com/Anarios/return-youtube-dislike/blob/main/LICENSE)
 
-別の言語: [English](README.md), [русский](READMEru.md), [Español](READMEes.md), [Nederlands](READMEnl.md), [Français](READMEfr.md), [Türkçe](READMEtr.md), [українська](READMEuk.md), [Deutsch](READMEde.md), [Ελληνικά](READMEgr.md), [Svenska](READMEsv.md), [中文](READMEcn.md), [Polski](READMEpl.md), [Danish](READMEda.md), [العربية](READMEar.md)
+別の言語: [English](README.md), [русский](READMEru.md), [Español](READMEes.md), [Nederlands](READMEnl.md), [Français](READMEfr.md), [Türkçe](READMEtr.md), [українська](READMEuk.md), [Deutsch](READMEde.md), [Ελληνικά](READMEgr.md), [Svenska](READMEsv.md), [中文](READMEcn.md), [Polski](READMEpl.md), [Danish](READMEda.md), [العربية](READMEar.md), [Bahasa Indonesia](READMEid.md), [български](READMEbg.md), [Tiếng Việt](READMEvi.md)
 
 # Return YouTube Dislike
 
@@ -43,15 +43,15 @@ YouTube API から低評価が削除されたことにより、バックエン�
 - **帰属**: [returnyoutubedislike.com](https://returnyoutubedislike.com/) へのリンクを明確に表記してください。
 - **レート制限**: クライアントごとに 1 分あたり 100 回、1 日あたり 10000 回という制限があります。制限に達すると*429*コードが返されます。
 
-API は以下の Base URL でアクセスできます:  
+API は以下の Base URL でアクセスできます:
 https://returnyoutubedislikeapi.com
 
-利用可能なエンドポイントはこちらを参照してください:  
+利用可能なエンドポイントはこちらを参照してください:
 https://returnyoutubedislikeapi.com/swagger/index.html
 
 ### 評価を取得
 
-API を利用して YouTube video ID から評価を取得する例です:  
+API を利用して YouTube video ID から評価を取得する例です:
 `/votes?videoId=kxOuG8jMIgI`
 
 ```json
@@ -73,7 +73,7 @@ API を利用して YouTube video ID から評価を取得する例です:
 ## API ドキュメント
 
 APIの完全なドキュメントは公式サイトを参照してください。
-[https://returnyoutubedislike.com/documentation/](https://returnyoutubedislike.com/documentation/) -->
+[https://returnyoutubedislike.com/docs/](https://returnyoutubedislike.com/docs/) -->
 
 ## 貢献する
 

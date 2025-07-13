@@ -111,6 +111,8 @@ export default {
       { name: "Українська", locale: "uk" },
       { name: "한국어", locale: "ko" },
       { name: "Polski", locale: "pl" },
+      { name: "Bahasa Indonesia", locale: "id" },
+      { name: "Tiếng Việt", locale: "vi"},
     ],
     alert: {
       show: false,
