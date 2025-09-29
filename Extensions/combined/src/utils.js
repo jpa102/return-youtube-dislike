@@ -1,4 +1,4 @@
-import { extConfig } from "./state";
+import { extConfig, isShorts } from "./state";
 
 function numberFormat(numberState) {
   return getNumberFormatter(extConfig.numberDisplayFormat).format(numberState);
@@ -18,7 +18,7 @@ function getNumberFormatter(optionSelect) {
           ?.getAttribute("href"),
       )?.searchParams?.get("locale");
     } catch {
-      cLog("Cannot find browser locale. Use en as default for number formatting.");
+      console.log("Cannot find browser locale. Use en as default for number formatting.");
       userLocales = "en";
     }
   }
@@ -40,11 +40,10 @@ function getNumberFormatter(optionSelect) {
       formatterCompactDisplay = "short";
   }
 
-  const formatter = Intl.NumberFormat(userLocales, {
+  return Intl.NumberFormat(userLocales, {
     notation: formatterNotation,
     compactDisplay: formatterCompactDisplay,
   });
-  return formatter;
 }
 
 function localize(localeString) {
@@ -91,8 +90,48 @@ function isInViewport(element) {
   );
 }
 
+function isShortsLoaded(videoId) {
+  if (!videoId) return false;
+
+  // Find all reel containers
+  const reelContainers = document.querySelectorAll(".reel-video-in-sequence-new");
+
+  for (const container of reelContainers) {
+    // Check if this container's thumbnail matches our video ID
+    const thumbnail = container.querySelector(".reel-video-in-sequence-thumbnail");
+    if (thumbnail) {
+      const bgImage = thumbnail.style.backgroundImage;
+      // YouTube thumbnail URLs contain the video ID in the format: /vi/VIDEO_ID/
+      if ((bgImage && bgImage.includes(`/${videoId}/`)) || (!bgImage && isInViewport(container))) {
+        // Check if this container has the renderer with visible experiment-overlay
+        const renderer = container.querySelector("ytd-reel-video-renderer");
+        if (renderer) {
+          const experimentOverlay = renderer.querySelector("#experiment-overlay");
+          if (
+            experimentOverlay &&
+            !experimentOverlay.hidden &&
+            window.getComputedStyle(experimentOverlay).display !== "none" &&
+            experimentOverlay.hasChildNodes()
+          ) {
+            return true;
+          }
+        }
+      }
+    }
+  }
+
+  return false;
+}
+
 function isVideoLoaded() {
   const videoId = getVideoId(window.location.href);
+
+  // Check if this is a Shorts URL
+  if (isShorts()) {
+    return isShortsLoaded(videoId);
+  }
+
+  // Regular video checks
   return (
     // desktop: spring 2024 UI
     document.querySelector(`ytd-watch-grid[video-id='${videoId}']`) !== null ||
@@ -103,14 +142,21 @@ function isVideoLoaded() {
   );
 }
 
-function cLog(message, writer) {
-  if (!extConfig.disableLogging) {
-    message = `[return youtube dislike]: ${message}`;
-    if (writer) {
-      writer(message);
-    } else {
-      console.log(message);
-    }
+const originalConsole = {
+  log: console.log.bind(console),
+  debug: console.debug.bind(console),
+  info: console.info.bind(console),
+  warn: console.warn.bind(console),
+  error: console.error.bind(console),
+};
+
+function initializeLogging() {
+  if (extConfig.disableLogging) {
+    console.log = () => {};
+    console.debug = () => {};
+  } else {
+    console.log = originalConsole.log;
+    console.debug = originalConsole.debug;
   }
 }
 
@@ -183,7 +229,7 @@ export {
   getVideoId,
   isInViewport,
   isVideoLoaded,
-  cLog,
+  initializeLogging,
   getColorFromTheme,
   localize,
   querySelector,
