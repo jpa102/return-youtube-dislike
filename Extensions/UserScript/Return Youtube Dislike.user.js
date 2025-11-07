@@ -2,7 +2,7 @@
 // @name         Return YouTube Dislike
 // @namespace    https://www.returnyoutubedislike.com/
 // @homepage     https://www.returnyoutubedislike.com/
-// @version      3.1.7.01
+// @version      3.1.8
 // @encoding     utf-8
 // @description  Return of the YouTube Dislike, Based off https://www.returnyoutubedislike.com/
 // @icon         https://github.com/Anarios/return-youtube-dislike/raw/main/Icons/Return%20Youtube%20Dislike%20-%20Transparent.png
@@ -15,8 +15,8 @@
 // @compatible   opera
 // @compatible   safari
 // @compatible   edge
-// @downloadURL  https://github.com/jpa102/return-youtube-dislike/raw/main/Extensions/UserScript/Return%20Youtube%20Dislike.user.js
-// @updateURL    https://github.com/jpa102/return-youtube-dislike/raw/main/Extensions/UserScript/Return%20Youtube%20Dislike.user.js
+// @downloadURL  https://raw.githubusercontent.com/jpa102/return-youtube-dislike/main/Extensions/UserScript/Return%20Youtube%20Dislike.user.js
+// @updateURL    https://raw.githubusercontent.com/jpa102/return-youtube-dislike/main/Extensions/UserScript/Return%20Youtube%20Dislike.user.js
 // @grant        GM.xmlHttpRequest
 // @connect      youtube.com
 // @grant        GM_addStyle
@@ -26,7 +26,6 @@
 const extConfig = {
 	// BEGIN USER OPTIONS
 	// You may change the following variables to allowed values listed in the corresponding brackets (* means default). Keep the style and keywords intact.
-	showUpdatePopup: false, // [true, false*] Show a popup tab after extension update (See what's new)
 	disableVoteSubmission: false, // [true, false*] Disable like/dislike submission (Stops counting your likes and dislikes)
 	disableLogging: true, // [true*, false] Disable Logging API Response in JavaScript Console.
 	coloredThumbs: false, // [true, false*] Colorize thumbs (Use custom colors for thumb icons)
@@ -36,20 +35,9 @@ const extConfig = {
 	numberDisplayRoundDown: false, // [true, false*] Round down numbers (Show rounded down numbers)
 	tooltipPercentageMode: "none", // [none*, dash_like, dash_dislike, both, only_like, only_dislike] Mode of showing percentage in like/dislike bar tooltip.
 	numberDisplayReformatLikes: false, // [true, false*] Re-format like numbers (Make likes and dislikes format consistent)
-	rateBarEnabled: true, // [true, false*] Enables ratio bar under like/dislike buttons
+	rateBarEnabled: true // [true*, false] Places a ratio bar under like/dislike buttons, desktop watch page only
 	// END USER OPTIONS
 };
-
-// code source: https://www.reddit.com/r/GoogleAppsScript/comments/185tw8f/comment/kb4t2o4/
-// youtube seems to be restrictive now, urban dictionary doesn't behave like this
-// this code block is here for the ratio bar to render below the like & dislike buttons
-if (window.trustedTypes && window.trustedTypes.createPolicy) {
-	window.trustedTypes.createPolicy('default', {
-		createHTML: string => string,
-		createScriptURL: string => string,
-		createScript: string => string,
-	});
-}
 
 const LIKED_STATE = "LIKED_STATE";
 const DISLIKED_STATE = "DISLIKED_STATE";
@@ -64,8 +52,8 @@ let isShorts = () => location.pathname.startsWith("/shorts");
 let mobileDislikes = 0;
 function cLog(text, subtext = "") {
 	if (!extConfig.disableLogging) {
-		subtext = subtext.trim() === "" ? "" : `(${subtext})`; 
-		console.log(`[Return YouTube Dislikes] ${text} ${subtext}`); 
+		subtext = subtext.trim() === "" ? "" : `(${subtext})`;
+		console.log(`[Return YouTube Dislikes] ${text} ${subtext}`);
 	}
 }
 
@@ -87,7 +75,8 @@ function isInViewport(element) {
 function getButtons() {
 	if (isShorts()) {
 		let elements = document.querySelectorAll(
-			isMobile ? "ytm-like-button-renderer" : "#like-button > ytd-like-button-renderer",
+			isMobile ? "reel-action-bar-view-model" : ".reel-player-overlay-actions > reel-action-bar-view-model"
+			? "reel-action-bar-view-model" : "reel-action-bar-view-model",
 		);
 		for (let element of elements) {
 			if (isInViewport(element)) {
@@ -96,8 +85,12 @@ function getButtons() {
 		}
 	}
 	if (isMobile) {
+		if (isShorts()) {
+			return (
+				document.querySelector("reel-action-bar-view-model")
+			);
+		}
 		return (
-			document.querySelector(".slim-video-action-bar-actions .segmented-buttons") ??
 			document.querySelector(".slim-video-action-bar-actions")
 		);
 	}
@@ -116,12 +109,12 @@ function getDislikeButton() {
 		if (getButtons().children[0].children[1] === undefined) {
 			return document.querySelector("#segmented-dislike-button");
 		} else {
-			return getButtons().children[0].children[1];
+			return getButtons().children[0].children[0].children[0].children[0].children[1];
 		}
 	} else {
 		if (getButtons().querySelector("segmented-like-dislike-button-view-model")) {
-		const dislikeViewModel = getButtons().querySelector("dislike-button-view-model");
-		if (!dislikeViewModel) cLog("Dislike button wasn't added to DOM yet...");
+			const dislikeViewModel = getButtons().querySelector("dislike-button-view-model");
+			if (!dislikeViewModel) cLog("Dislike button wasn't added to DOM yet...");
 			return dislikeViewModel;
 		} else {
 			return getButtons().children[1];
@@ -130,18 +123,29 @@ function getDislikeButton() {
 }
 
 function getLikeButton() {
-	return getButtons().children[0].tagName === "YTD-SEGMENTED-LIKE-DISLIKE-BUTTON-RENDERER"
-		? document.querySelector("#segmented-like-button") !== null
-		? document.querySelector("#segmented-like-button")
-		: getButtons().children[0].children[0]
-	: getButtons().querySelector("like-button-view-model") ?? getButtons().children[0];
+	if (getButtons().children[0].tagName === "YTD-SEGMENTED-LIKE-DISLIKE-BUTTON-RENDERER") {
+		if (getButtons().children[0].children[1] === undefined) {
+			return document.querySelector("#segmented-like-button");
+		} else {
+			return getButtons().children[0].children[0].children[0].children[0].children[0];
+		}
+	} else {
+		if (getButtons().querySelector("segmented-like-dislike-button-view-model")) {
+			const likeViewModel = getButtons().querySelector("like-button-view-model");
+			if (!likeViewModel) cLog("Like button wasn't added to DOM yet...");
+			return likeViewModel;
+		} else {
+			return getButtons().children[0];
+		}
+	}
 }
 
 function getLikeTextContainer() {
 	return (
 		getLikeButton().querySelector("#text") ??
 		getLikeButton().getElementsByTagName("yt-formatted-string")[0] ??
-		getLikeButton().querySelector("span[role='text']")
+		getLikeButton().querySelector("span[role='text']") ??
+		getLikeButton().querySelector("button > .yt-spec-button-shape-next__button-text-content")
 	);
 }
 
@@ -152,13 +156,12 @@ function getDislikeTextContainer() {
 		dislikeButton?.getElementsByTagName("yt-formatted-string")[0] ??
 		dislikeButton?.querySelector("span[role='text']");
 	if (result === null) {
-		let textSpan = document.createElement("span");
+		let textSpan = document.createElement("div");
 		textSpan.id = "text";
-		//textSpan.style.marginLeft = "6px"; // impractical imo
-		document.querySelector("dislike-button-view-model > toggle-button-view-model > button-view-model > button").classList.remove("yt-spec-button-shape-next--icon-button"); // new way
-		document.querySelector("dislike-button-view-model > toggle-button-view-model > button-view-model > button").classList.add("yt-spec-button-shape-next--icon-leading"); // new way
-		dislikeButton?.querySelector("button").appendChild(textSpan);
-		if (dislikeButton) dislikeButton.querySelector("button").style.width = "auto";
+		textSpan.setAttribute("class", "yt-spec-button-shape-next__button-text-content");
+		getDislikeButton().querySelector("toggle-button-view-model > button-view-model > button").classList.remove("yt-spec-button-shape-next--icon-button");
+		getDislikeButton().querySelector("toggle-button-view-model > button-view-model > button").classList.add("yt-spec-button-shape-next--icon-leading");
+		dislikeButton?.querySelector("button").insertBefore(textSpan, getDislikeButton().querySelector("toggle-button-view-model > button-view-model > button").children[1]);
 		result = textSpan;
 	}
 	return result;
@@ -211,40 +214,47 @@ if (isShorts() && !shortsObserver) {
 
 function isVideoLiked() {
 	if (isMobile) {
-		return getLikeButton().querySelector("button").getAttribute("aria-label") == "true";
+		return getLikeButton().querySelector("button").getAttribute("aria-pressed") == "true";
 	}
-	return getLikeButton().classList.contains("style-default-active");
+	return getLikeButton().querySelector("button").getAttribute("aria-pressed") == "true";
 }
 
 function isVideoDisliked() {
 	if (isMobile) {
-		return getDislikeButton()?.querySelector("button").getAttribute("aria-label") == "true";
+		return getDislikeButton()?.querySelector("button").getAttribute("aria-pressed") == "true";
 	}
-	return getDislikeButton()?.classList.contains("style-default-active");
+	return getDislikeButton()?.querySelector("button").getAttribute("aria-pressed") == "true";
 }
 
 function isVideoNotLiked() {
 	if (isMobile) {
 		return !isVideoLiked();
 	}
-	return getLikeButton().classList.contains("style-text");
+	return !isVideoLiked();
 }
 
 function isVideoNotDisliked() {
 	if (isMobile) {
 		return !isVideoDisliked();
 	}
-	return getDislikeButton()?.classList.contains("style-text");
+	return !isVideoDisliked();
 }
 
 function checkForUserAvatarButton() {
 	if (isMobile) {
-		return;
+		if (document.querySelector("avatar-view-model")) {
+			return true;
+		} else {
+			return false;
+		}
 	}
-	if (document.querySelector("#avatar-btn")) {
-		return true;
-	} else {
-		return false;
+
+	if (!isMobile) {
+		if (document.querySelector("#avatar-btn")) {
+			return true;
+		} else {
+			return false;
+		}
 	}
 }
 
@@ -271,7 +281,7 @@ function setDislikes(dislikesCount) {
 		mobileDislikes = dislikesCount;
 		return;
 	}
-	
+
 	const _container = getDislikeTextContainer();
 	_container?.removeAttribute("is-empty");
 	if (_container?.innerText !== dislikesCount) {
@@ -282,15 +292,22 @@ function setDislikes(dislikesCount) {
 function getLikeCountFromButton() {
 	try {
 		if (isShorts()) {
-		// Youtube Shorts don't work with this query. It's not necessary; we can skip it and still see the results.
-		// It should be possible to fix this function, but it's not critical to showing the dislike count.
-		return false;
-	}
-	let likeButton =
-		getLikeButton().querySelector("yt-formatted-string#text") ?? getLikeButton().querySelector("button");
-		
-		let likesStr = likeButton.getAttribute("aria-label").replace(/\D/g, "");
-		return likesStr.length > 0 ? parseInt(likesStr) : false;
+			/*
+				[jpa102] the comment block here said it's not possible to get like counts from shorts, but can be fixed
+
+					// Youtube Shorts don't work with this query. It's not necessary; we can skip it and still see the results.
+					// It should be possible to fix this function, but it's not critical to showing the dislike count.
+
+				i can now see why: it's inconsistent and broken at some times (it doesn't display 10,000 but instead like 10K, i'm using japanese locale in my end during debugging)
+				either apply the like counts from ryd, or still attempt to get the native like counts from the button
+			*/
+			return false;
+		}
+		let likeButton =
+			getLikeButton().querySelector("yt-formatted-string#text") ?? getLikeButton().querySelector("button");
+
+			let likesStr = likeButton.getAttribute("aria-label").replace(/\D/g, "");
+			return likesStr.length > 0 ? parseInt(likesStr) : false;
 	} catch {
 		return false;
 	}
@@ -308,20 +325,20 @@ function getLikeCountFromButton() {
 		background: var(--yt-spec-icon-disabled);
 		border-radius: 2px;
 	}
-	
+
 	#return-youtube-dislike-bar {
 		background: var(--yt-spec-text-primary);
 		border-radius: 2px;
 		transition: all 0.15s ease-in-out;
 	}
-	
+
 	.ryd-tooltip {
 		position: absolute;
 		display: block;
 		height: 2px;
 		bottom: -10px;
 	}
-	
+
 	.ryd-tooltip-bar-container {
 		width: 100%;
 		height: 2px;
@@ -330,11 +347,11 @@ function getLikeCountFromButton() {
 		padding-bottom: 12px;
 		top: -6px;
 	}
-	
+
 	ytd-menu-renderer.ytd-watch-metadata {
 		overflow-y: visible !important;
 	}
-	
+
 	#top-level-buttons-computed {
 		position: relative !important;
 	}
@@ -344,16 +361,15 @@ function createRateBar(likes, dislikes) {
 	if (isMobile || !extConfig.rateBarEnabled) {
 		return;
 	}
+
 	let rateBar = document.getElementById("return-youtube-dislike-bar-container");
-	
 	const widthPx = getLikeButton().clientWidth + (getDislikeButton()?.clientWidth ?? 52);
-	
 	const widthPercent = likes + dislikes > 0 ? (likes / (likes + dislikes)) * 100 : 50;
-	
+
 	var likePercentage = parseFloat(widthPercent.toFixed(1));
 	const dislikePercentage = (100 - likePercentage).toLocaleString();
 	likePercentage = likePercentage.toLocaleString();
-	
+
 	var tooltipInnerHTML;
 	switch (extConfig.tooltipPercentageMode) {
 		case "dash_like":
@@ -374,7 +390,7 @@ function createRateBar(likes, dislikes) {
 		default:
 			tooltipInnerHTML = `${likes.toLocaleString()}&nbsp;/&nbsp;${dislikes.toLocaleString()}`;
 	}
-	
+
 	if (!rateBar && !isMobile) {
 		let colorLikeStyle = "";
 		let colorDislikeStyle = "";
@@ -394,7 +410,7 @@ function createRateBar(likes, dislikes) {
 							style="width: 100%; height: 2px;${colorDislikeStyle}"
 							>
 							<div id="return-youtube-dislike-bar"
-								style="width: ${widthPercent}%; height: 100%${colorDislikeStyle}"
+								style="width: ${widthPercent}%; height: 100%${colorLikeStyle}"
 							></div>
 						</div>
 					</div>
@@ -415,7 +431,7 @@ function createRateBar(likes, dislikes) {
 	} else {
 		document.querySelector(".ryd-tooltip").style.width = widthPx + "px";
 		document.getElementById("return-youtube-dislike-bar").style.width = widthPercent + "%";
-		
+
 		if (extConfig.coloredBar) {
 			document.getElementById("return-youtube-dislike-bar-container").style.backgroundColor = getColorFromTheme(false);
 			document.getElementById("return-youtube-dislike-bar").style.backgroundColor = getColorFromTheme(true);
@@ -426,28 +442,30 @@ function createRateBar(likes, dislikes) {
 function setState() {
 	cLog("Fetching votes...");
 	let statsSet = false;
-	
+
 	fetch(`https://returnyoutubedislikeapi.com/votes?videoId=${getVideoId()}`).then((response) => {
 		response.json().then((json) => {
 			if (json && !("traceId" in response) && !statsSet) {
-				const { dislikes, likes } = json;
+				const { dislikes } = json;
 				cLog(`Received count: ${dislikes}`);
-				likesvalue = likes;
+				if (isShorts()) { likesvalue = parseInt(getLikeButton().querySelector("toggle-button-view-model > button-view-model > label > button").ariaLabel.replace(/\D/g, "")); } // get and format it to int value from the like button instead
+				if (!isShorts()) { likesvalue = parseInt(getLikeButton().querySelector("toggle-button-view-model > button-view-model > button").ariaLabel.replace(/\D/g, "")); } // get and format it to int value from the like button instead
+				likes = likesvalue; // overwrite the value with the one from the native like button
 				dislikesvalue = dislikes;
 				setDislikes(numberFormat(dislikes));
+
 				if (extConfig.numberDisplayReformatLikes === true) {
 					const nativeLikes = getLikeCountFromButton();
 					if (nativeLikes !== false) {
 						setLikes(numberFormat(nativeLikes));
 					}
 				}
-				createRateBar(likes, dislikes);
+				createRateBar(likesvalue, dislikes);
 				if (extConfig.coloredThumbs === true) {
-					const dislikeButton = getDislikeButton();
 					if (isShorts()) {
 						// for shorts, leave deactived buttons in default color
 						const shortLikeButton = getLikeButton().querySelector("tp-yt-paper-button#button");
-						const shortDislikeButton = dislikeButton?.querySelector("tp-yt-paper-button#button");
+						const shortDislikeButton = getDislikeButton().querySelector("tp-yt-paper-button#button");
 						if (shortLikeButton.getAttribute("aria-pressed") === "true") {
 							shortLikeButton.style.color = getColorFromTheme(true);
 						}
@@ -457,8 +475,55 @@ function setState() {
 						shortsObserver.observe(shortLikeButton);
 						shortsObserver.observe(shortDislikeButton);
 					} else {
-						getLikeButton().style.color = getColorFromTheme(true);
-						if (dislikeButton) dislikeButton.style.color = getColorFromTheme(false);
+						// placing a setTimeout because for some reason, it's not applying the colors
+						setTimeout(function() {
+							/*
+								originally, it sets the colors directly to the buttons via attributes
+								instead, set them inside the <style> tag
+
+								temporary implementation by jpa102. someone could improve this, i think
+							*/
+							const thumbsColorStyle = document.createElement('style');
+							thumbsColorStyle.id = "colored-thumbs-style-for-ryd";
+							thumbsColorStyle.type = 'text/css';
+							thumbsColorStyle.textContent = `
+								/* for the regular watch page */
+								.ytSegmentedLikeDislikeButtonViewModelSegmentedButtonsWrapper > like-button-view-model > toggle-button-view-model > button-view-model > button > div > yt-icon > yt-animated-icon > ytd-lottie-player > lottie-component > svg > g > g > g > g > path,
+								.ytSegmentedLikeDislikeButtonViewModelSegmentedButtonsWrapper > like-button-view-model > toggle-button-view-model > button-view-model > button > div > yt-icon > yt-animated-icon > ytd-lottie-player > lottie-component > svg > g > g > path,
+								.ytSegmentedLikeDislikeButtonViewModelSegmentedButtonsWrapper > like-button-view-model > toggle-button-view-model > button-view-model > button > div > animated-icon > lottie-component > svg > g > g > g > g > path,
+								.ytSegmentedLikeDislikeButtonViewModelSegmentedButtonsWrapper > like-button-view-model > toggle-button-view-model > button-view-model > button > div > yt-icon > span > div > svg > path,
+								.ytSegmentedLikeDislikeButtonViewModelSegmentedButtonsWrapper > like-button-view-model > toggle-button-view-model > button-view-model > button > div > animated-icon > lottie-component > svg > g > g > path {
+									fill: ${getColorFromTheme(true)} !important;
+								}
+
+								.ytSegmentedLikeDislikeButtonViewModelSegmentedButtonsWrapper > dislike-button-view-model > toggle-button-view-model > button-view-model > button > div > span > span > div > svg > path,
+								.ytSegmentedLikeDislikeButtonViewModelSegmentedButtonsWrapper > dislike-button-view-model > toggle-button-view-model > button-view-model > button > div > c3-icon > span > div > svg > path {
+									fill: ${getColorFromTheme(false)} !important;
+								}
+
+                                /* for shorts watch page */
+								html[dark] reel-action-bar-view-model > like-button-view-model > toggle-button-view-model > button-view-model > label > button[aria-pressed^='true'] {
+									background: rgba(0, 0, 0, 0.4);
+									color: ${getColorFromTheme(true)};
+								}
+
+								html[dark] reel-action-bar-view-model > dislike-button-view-model > toggle-button-view-model > button-view-model > label > button[aria-pressed^='true'] {
+									background: rgba(0, 0, 0, 0.4);
+									color: ${getColorFromTheme(false)};
+								}
+
+								html[dark] reel-action-bar-view-model > like-button-view-model > toggle-button-view-model > button-view-model > label > button[aria-pressed^='false'],
+								html[dark] reel-action-bar-view-model > like-button-view-model > toggle-button-view-model > button-view-model > label > div > span {
+									color: var(--yt-spec-icon-inactive);
+								}
+
+								html[dark] reel-action-bar-view-model > dislike-button-view-model > toggle-button-view-model > button-view-model > label > button[aria-pressed^='false'],
+								html[dark] reel-action-bar-view-model > dislike-button-view-model > toggle-button-view-model > button-view-model > label > div > span {
+									color: var(--yt-spec-icon-inactive);
+								}
+							`;
+							document.head.appendChild(thumbsColorStyle);
+						}, 2500); // for just 2.5 seconds
 					}
 				}
 			}
@@ -488,9 +553,9 @@ function likeClicked() {
 			previousState = 1;
 		}
 		if (extConfig.numberDisplayReformatLikes === true) {
-			const nativeLikes = getLikeCountFromButton();
+			setLikes(numberFormat(likesvalue));
 			if (nativeLikes !== false) {
-				setLikes(numberFormat(nativeLikes));
+				setLikes(numberFormat(likesvalue));
 			}
 		}
 	}
@@ -512,9 +577,9 @@ function dislikeClicked() {
 			updateDOMDislikes();
 			previousState = 2;
 			if (extConfig.numberDisplayReformatLikes === true) {
-				const nativeLikes = getLikeCountFromButton();
+				setLikes(numberFormat(likesvalue));
 				if (nativeLikes !== false) {
-					setLikes(numberFormat(nativeLikes));
+					setLikes(numberFormat(likesvalue));
 				}
 			}
 		}
@@ -543,7 +608,7 @@ function isVideoLoaded() {
 		return document.getElementById("player").getAttribute("loading") == "false";
 	}
 	const videoId = getVideoId();
-	
+
 	return (
 		// desktop: spring 2024 UI
 		document.querySelector(`ytd-watch-grid[video-id='${videoId}']`) !== null ||
@@ -590,7 +655,7 @@ function getNumberFormatter(optionSelect) {
 			userLocales = "en";
 		}
 	}
-	
+
 	let formatterNotation;
 	let formatterCompactDisplay;
 	switch (optionSelect) {
@@ -607,7 +672,7 @@ function getNumberFormatter(optionSelect) {
 			formatterNotation = "compact";
 			formatterCompactDisplay = "short";
 	}
-	
+
 	const formatter = Intl.NumberFormat(userLocales, {
 		notation: formatterNotation,
 		compactDisplay: formatterCompactDisplay,
@@ -647,24 +712,24 @@ let smartimationObserver = null;
 
 function setEventListeners(evt) {
 	let jsInitChecktimer;
-	
+
 	function checkForJS_Finish() {
 	//console.log();
 	if (isShorts() || (getButtons()?.offsetParent && isVideoLoaded())) {
 		const buttons = getButtons();
 		const dislikeButton = getDislikeButton();
-		
+
 		if (preNavigateLikeButton !== getLikeButton() && dislikeButton) {
 			cLog("Registering button listeners...");
 			try {
-				getLikeButton().addEventListener("click", likeClicked);
-				dislikeButton?.addEventListener("click", dislikeClicked);
-				getLikeButton().addEventListener("touchstart", likeClicked);
-				dislikeButton?.addEventListener("touchstart", dislikeClicked);
-				dislikeButton?.addEventListener("focusin", updateDOMDislikes);
-				dislikeButton?.addEventListener("focusout", updateDOMDislikes);
-				preNavigateLikeButton = getLikeButton();
-				
+				getLikeButton().querySelector("button").addEventListener("click", likeClicked);
+				dislikeButton.querySelector("button")?.addEventListener("click", dislikeClicked);
+				getLikeButton().querySelector("button").addEventListener("touchstart", likeClicked);
+				dislikeButton.querySelector("button")?.addEventListener("touchstart", dislikeClicked);
+				dislikeButton.querySelector("button")?.addEventListener("focusin", updateDOMDislikes);
+				dislikeButton.querySelector("button")?.addEventListener("focusout", updateDOMDislikes);
+				preNavigateLikeButton = getLikeButton().querySelector("button");
+
 				if (!smartimationObserver) {
 					smartimationObserver = createObserver(
 						{
@@ -676,7 +741,7 @@ function setEventListeners(evt) {
 					);
 					smartimationObserver.container = null;
 				}
-				
+
 				const smartimationContainer = buttons.querySelector("yt-smartimation");
 				if (smartimationContainer && smartimationObserver.container != smartimationContainer) {
 					cLog("Initializing smartimation mutation observer");
@@ -694,7 +759,7 @@ function setEventListeners(evt) {
 			}
 		}
 	}
-	
+
 	cLog("Setting up...");
 	jsInitChecktimer = setInterval(checkForJS_Finish, 111);
 }
