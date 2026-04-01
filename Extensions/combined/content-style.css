@@ -19,7 +19,7 @@
 } */
 
 #ryd-bar-container {
-  background: var(--yt-spec-icon-disabled);
+  background: var(--yt-spec-grey-3);
   border-radius: 2px;
 }
 
