@@ -93,8 +93,8 @@ function createRateBar(likes, dislikes) {
           // Add border between info and comments
           let descriptionAndActionsElement = document.getElementById("top-row");
           descriptionAndActionsElement.style.borderBottom =
-            "1px solid var(--yt-spec-10-percent-layer)";
-          descriptionAndActionsElement.style.paddingBottom = "10px";
+            "1px solid var(--yt-spec-outline)";
+          descriptionAndActionsElement.style.paddingBottom = "0.69em";
 
           // Fix like/dislike ratio bar offset in new UI
           document.getElementById("actions-inner").style.width = "revert";
