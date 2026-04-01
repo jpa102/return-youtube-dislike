@@ -292,7 +292,7 @@ function getLikeCountFromButton() {
       document.head.appendChild(styleNode);
     })(`
     #return-youtube-dislike-bar-container {
-      background: var(--yt-spec-icon-disabled);
+      background: var(--yt-spec-grey-3);
       border-radius: 2px;
     }
 
@@ -392,8 +392,8 @@ function createRateBar(likes, dislikes) {
 `,
     );
     let descriptionAndActionsElement = document.getElementById("top-row");
-    descriptionAndActionsElement.style.borderBottom = "1px solid var(--yt-spec-10-percent-layer)";
-    descriptionAndActionsElement.style.paddingBottom = "10px";
+    descriptionAndActionsElement.style.borderBottom = "1px solid var(--yt-spec-outline)";
+    descriptionAndActionsElement.style.paddingBottom = "0.69em";
   } else {
     document.querySelector(".ryd-tooltip").style.width = widthPx + "px";
     document.getElementById("return-youtube-dislike-bar").style.width = widthPercent + "%";
